@@ -1,0 +1,68 @@
+/* Copahue Mobile — touch layout (landscape-first). Loaded after the base styles. */
+:root{--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+html,body{overscroll-behavior:none;touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+button,.g-btn{touch-action:manipulation;min-height:44px}
+/* hide desktop-only things */
+body.mobile #look-btn,body.mobile #g-look,body.mobile #g-doc,body.mobile #gfx-btn,body.mobile #g-chr,body.mobile #xa-fs{display:none!important}
+/* controls: joystick left, buttons right, big targets, safe areas */
+body.mobile #g-joy{left:calc(22px + var(--sl));bottom:calc(22px + var(--sb));width:132px;height:132px}
+body.mobile #g-tbtn{right:calc(16px + var(--sr));bottom:calc(18px + var(--sb));flex-direction:row-reverse;flex-wrap:wrap;max-width:46vw;justify-content:flex-start}
+body.mobile #g-tbtn .g-btn{font-size:20px;min-width:64px;min-height:56px;padding:8px 14px}
+body.mobile #g-top{left:calc(10px + var(--sl));top:calc(8px + var(--st));padding:3px 10px 4px}
+body.mobile #g-top h1{font-size:16px}
+body.mobile #g-side{right:calc(8px + var(--sr))}
+#mb-fs{position:fixed;right:calc(10px + var(--sr));top:calc(8px + var(--st));z-index:60;width:48px;font-size:22px;padding:0}
+/* map mode: clean overhead view, minimal HUD */
+body.mb-map #g-map,body.mb-map #g-cmpx,body.mb-map #g-pname,body.mb-map #g-cmp,body.mb-map #g-mis,body.mb-map #g-stat,body.mb-map #g-prompt{display:none!important}
+body.mb-map #g-tE,body.mb-map #g-tQ{display:none!important}
+body.mb-map #g-joy{opacity:.85}
+body.mb-map .glbl{font-size:18px;padding:5px 11px 6px;border-width:3px;min-height:36px;box-shadow:3px 3px 0 var(--ink)}
+body.mb-map .glbl small{display:none}
+body.mb-map .glbl.tg small,body.mb-map .glbl.base small{display:block;font-size:12px}
+body.mb-map #g-wxs,body.mb-map #g-top .st span:nth-child(n+3){display:none}
+body.mb-map .glbl.tg{background:var(--yel);transform-origin:50% 100%}
+#mb-tgt{position:fixed;left:50%;bottom:calc(14px + var(--sb));transform:translateX(-50%);z-index:50;display:none;align-items:center;gap:8px;padding:4px 8px;border:3px solid var(--ink);border-radius:12px;background:#fffdf5;box-shadow:3px 3px 0 var(--ink);font:20px/1 'Bangers',Impact,sans-serif;letter-spacing:.04em;max-width:52vw;white-space:nowrap}
+#mb-tgt b{display:inline-block;font-size:26px;width:30px;text-align:center;transition:transform .15s}
+#mb-tgt button{min-width:48px;min-height:48px;border:2.5px solid var(--ink);border-radius:10px;background:var(--yel);font-size:20px}
+#mb-perf{position:fixed;left:calc(8px + var(--sl));bottom:calc(8px + var(--sb));z-index:99;margin:0;padding:4px 6px;font:11px/1.2 monospace;background:rgba(0,0,0,.7);color:#7fff7f;pointer-events:none;border-radius:4px}
+/* character picker: big preview + horizontal strip */
+#mb-prev{float:left;width:38%;text-align:center;padding-right:10px;box-sizing:border-box}
+#mb-prev img{max-width:100%;max-height:52vh;border:3px solid var(--ink);border-radius:12px;background:#fff}
+#mb-prev .n{font:26px Bangers,Impact;letter-spacing:.05em;margin-top:4px}
+#g-mb:has(#mb-prev) .scard.ch img:first-child{display:none}
+/* landscape modal: scrollable, sticky action row so the start button is always reachable */
+@media (orientation:landscape) and (max-height:520px){
+  .g-ov:not(.fp3d) #g-modal{max-height:calc(100vh - 10px - var(--st) - var(--sb))!important;margin:calc(5px + var(--st)) auto 5px!important;width:min(96vw,900px)!important}
+  .g-ov:not(.fp3d) #g-mb{max-height:calc(100vh - 78px - var(--st) - var(--sb));overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  #g-mb .g-row{position:sticky;bottom:0;background:#fff8e7;padding:6px 0;z-index:3}
+  #g-mb .g-grid{grid-template-columns:1fr}
+  #g-mb .photo{display:none}
+  #g-mh{font-size:22px!important}
+  #g-mb .g-btn{min-height:48px}
+  #g-mb .scard.ch{min-width:120px}
+}
+/* portrait: ask to rotate */
+#mb-rotate{display:none;position:fixed;inset:0;z-index:999;background:#ffd23f;color:var(--ink);align-items:center;justify-content:center;text-align:center;font:30px/1.3 Bangers,Impact,sans-serif;letter-spacing:.05em}
+@media (orientation:portrait) and (max-width:700px){#mb-rotate{display:flex}}
+
+.g-ov,.g-modal .bd,#g-mb{touch-action:pan-y}
+
+body.mobile #g-radio{left:auto!important;right:calc(66px + var(--sr))!important;top:calc(8px + var(--st))!important;bottom:auto!important}
+#mb-me{position:fixed;left:0;top:0;z-index:12;width:46px;height:46px;margin:-23px 0 0 -23px;pointer-events:none;display:none;will-change:transform}
+#mb-me i{position:absolute;inset:0;border-radius:50%;border:4px solid #1d1a2b;background:rgba(255,79,58,.92);box-shadow:0 0 0 4px #fff,0 0 0 8px rgba(29,26,43,.55);animation:mbp 1.4s ease-in-out infinite}
+#mb-me b{position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-size:0;width:0;height:0;border:11px solid transparent;border-bottom:18px solid #1d1a2b;border-top:0}
+#mb-me u{position:absolute;inset:0;text-decoration:none}
+@keyframes mbp{50%{transform:scale(1.12)}}
+
+/* HUD diet on small screens: minimap, mission list and text compass are replaced by the map view + target chip */
+body.mobile #g-map,body.mobile #g-mis,body.mobile #g-cmp{display:none!important}
+body.mobile #g-stat{left:calc(170px + var(--sl))!important;right:auto!important;bottom:calc(14px + var(--sb))!important;top:auto!important;min-width:0!important;font-size:12px!important;max-width:34vw;padding:4px 8px!important}
+body.mobile #g-cmpx{transform:scale(.8);transform-origin:50% 0;top:calc(4px + var(--st))!important}
+/* 3D mini-games (filtration, probe): compact panel on the right, touch buttons hidden while open */
+body.mb-fpm #g-tbtn,body.mb-fpm #g-tT{display:none!important}
+@media (orientation:landscape) and (max-height:520px){
+  .g-ov.fp3d{padding:6px calc(6px + var(--sr)) 6px 6px;place-items:stretch end}
+  .g-ov.fp3d .g-modal{width:min(360px,44vw)!important;max-height:calc(100vh - 12px)!important;margin:0!important;overflow:auto}
+  .g-ov.fp3d #g-mb{max-height:calc(100vh - 78px);overflow:auto;touch-action:pan-y}
+  .g-ov.fp3d .g-btn{min-height:48px;font-size:17px}
+}

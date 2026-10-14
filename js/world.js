@@ -1349,7 +1349,7 @@ function animate(){
       const fl=Math.sin(t*6+u.ph)*.35;u.w1.rotation.x=fl;u.w2.rotation.x=-fl;b.scale.setScalar(clamp(SF*.8,.8,2.4));});
   }
   waterMats.forEach(m=>m.uniforms.time.value=t);if(saltoTex)saltoTex.offset.y=-t*1.4;riverMats.forEach(m=>m.uniforms.time.value=t);
-  updateLOD();const gfxMoved=gfxBeforeRender();const RL=!!(window.REAL&&REAL.frame(dt,t));renderer.setRenderTarget(rt);renderer.render(scene,camera);if(window.FPG&&FPG.render)FPG.render(renderer,camera);renderer.setRenderTarget(null);gfxAfterRender(gfxMoved);if(RL)REAL.post();else renderer.render(postScene,postCam);if(window.__afterRender)window.__afterRender();
+  updateLOD();const gfxMoved=gfxBeforeRender();const RL=!!(window.REAL&&REAL.frame(dt,t));if(window.__NOPOST){renderer.setRenderTarget(null);renderer.render(scene,camera);gfxAfterRender(gfxMoved);}else{renderer.setRenderTarget(rt);renderer.render(scene,camera);if(window.FPG&&FPG.render)FPG.render(renderer,camera);renderer.setRenderTarget(null);gfxAfterRender(gfxMoved);if(RL)REAL.post();else renderer.render(postScene,postCam);}if(window.__afterRender)window.__afterRender();
   updateLabels();
 }
 

@@ -2254,7 +2254,7 @@ function fpFront(){try{return !!PK.freeze();}catch(_){return false;}}  // a char
 function eyeH(){return .174*((pl.g&&pl.g.scale.y)||1.7);}  // eye height of the current character (was a fixed .172 ≈ child height)
 function camLens(fp){const C=Wd.camera,n=fp?.004:.05,f=fp?160:500;if(C.near!==n||C.far!==f){C.near=n;C.far=f;C.updateProjectionMatrix();const U=Wd.postMat.uniforms;U.near.value=n;U.far.value=f;}}
 function updateCamera(dt){
-  const FP=fpOn();camLens(FP);
+  const FP=fpOn();camLens(FP);if(FP)Wd.camera.up.set(0,1,0);
   if(((!FP&&!(cam.fp&&fpShow()&&mode==='play'))||modal)&&document.pointerLockElement){cam._autoExit=true;try{document.exitPointerLock();}catch(_){}}
   if(pl.inTruck&&!cam.wasTruck){cam.dragYaw=0;cam.dragPitch=0;}cam.wasTruck=pl.inTruck;
   if(FP){const C=Wd.camera,gy=Wd.heightAt(pl.x,pl.z);
@@ -2272,11 +2272,12 @@ function updateCamera(dt){
   const chase=pl.inTruck&&!cam.map?clamp(truck.speed/2.5,-.3,1):0;if(chase){tgt.x+=Math.cos(truck.yaw)*.25*chase;tgt.z-=Math.sin(truck.yaw)*.25*chase;}
   if(pl.inTruck)cam.yaw=angLerp(cam.yaw,truck.yaw,Math.min(1,dt*(Math.abs(truck.speed)>.2?3:1)));
   let want;
-  if(cam.map){const yw=cam.yaw+cam.dragYaw,fx=Math.cos(yw),fz=-Math.sin(yw),Z=cam.zoom;tgt.x+=fx*3.2*Z;tgt.z+=fz*3.2*Z;want=new THREE.Vector3(tgt.x-fx*8.5*Z,tgt.y+14*Z,tgt.z-fz*8.5*Z);}
+  if(cam.map&&window.MOB&&MOB.on){want=MOB.mapWant(tgt,dt);}
+  else if(cam.map){const yw=cam.yaw+cam.dragYaw,fx=Math.cos(yw),fz=-Math.sin(yw),Z=cam.zoom;tgt.x+=fx*3.2*Z;tgt.z+=fz*3.2*Z;want=new THREE.Vector3(tgt.x-fx*8.5*Z,tgt.y+14*Z,tgt.z-fz*8.5*Z);}
   else{cam.show=lerp(cam.show||0,cam.fp&&fpShow()&&fpFront()&&mode==='play'?2.45:0,Math.min(1,dt*2.5));const dist=(pl.inTruck?1.85+.55*Math.max(0,chase):1.25)*cam.zoom*(1+.25*cam.show/2.45),pitch=clamp((pl.inTruck?.38-.1*Math.max(0,chase):.34)+cam.dragPitch+(cam.show>.05?-.12*cam.show/2.45:0),.05,1.35),yw=cam.yaw+cam.dragYaw+cam.show;
     want=new THREE.Vector3(tgt.x-Math.cos(yw)*Math.cos(pitch)*dist,tgt.y+Math.sin(pitch)*dist,tgt.z+Math.sin(yw)*Math.cos(pitch)*dist);
     const gy=Wd.heightAt(want.x,want.z)+.18;if(want.y<gy)want.y=gy;}
-  C.position.lerp(want,1-Math.exp(-dt*(cam.map?4:9)));if(EV.shake>0){const sh=EV.shake*.05;C.position.x+=(Math.random()-.5)*sh;C.position.y+=(Math.random()-.5)*sh;C.position.z+=(Math.random()-.5)*sh;}C.lookAt(tgt);Wd.controls.target.copy(tgt);
+  C.position.lerp(want,1-Math.exp(-dt*(cam.map?4:9)));if(EV.shake>0){const sh=EV.shake*.05;C.position.x+=(Math.random()-.5)*sh;C.position.y+=(Math.random()-.5)*sh;C.position.z+=(Math.random()-.5)*sh;}{const ov=cam.map&&window.MOB&&MOB.on;C.up.set(0,ov?0:1,ov?-1:0);}C.lookAt(tgt);Wd.controls.target.copy(tgt);
 }
 
 // ------------------------------------------------------------ HUD
@@ -2738,7 +2739,7 @@ function showTitle(){
      $('#g-new').onclick=()=>{S.sites={};S.samples=[];S.score=0;S.t=0;S.shipped=false;S.target=null;S.quakeAt=QUAKE_AT;S.petted=false;clearEruption();clearKits();resetPositions();save();openPicker(start);};
      const c=$('#g-cont');if(c)c.onclick=()=>{Object.assign(S,{sites:sv.sites||{},samples:sv.samples||[],score:sv.score||0,t:sv.t||0,shipped:!!sv.shipped,quakeAt:Math.max(sv.quakeAt||QUAKE_AT,(sv.t||0)+60),petted:!!sv.petted});clearEruption();clearKits();(sv.kits||[]).forEach(k=>addKit(k[0],k[1]));resetPositions();openPicker(start);};}});
 }
-function start(){closeModal();mode='play';AU.init();setTimeout(()=>setCharacter(charIdx),900);setTimeout(()=>AU.sfx.voice(10,170),300);buildMissionList();toast('🛻 Welcome to Caviahue! Pick a site from the <b>MISSION</b> list (or follow the arrow). Hike sites 🥾 are on the volcano.',false,5000);}
+function start(){closeModal();mode='play';if(window.MOB)MOB.onStart();AU.init();setTimeout(()=>setCharacter(charIdx),900);setTimeout(()=>AU.sfx.voice(10,170),300);buildMissionList();toast('🛻 Welcome to Caviahue! Pick a site from the <b>MISSION</b> list (or follow the arrow). Hike sites 🥾 are on the volcano.',false,5000);}
 function showHelp(){if(modal&&modal.help){closeModal();return;}
   const K=(k,en,es)=>`<tr><td style="width:44%;padding:3px 10px 3px 0;vertical-align:top;line-height:1.7">${k.split(' ').map(x=>x==='/'||x==='+'?x:`<kbd>${x}</kbd>`).join(' ')}</td><td style="padding:3px 0">${LX(en,es)}</td></tr>`;
   const H=(en,es)=>`<tr><td colspan="2" style="padding:10px 0 3px;font-family:Bangers,sans-serif;font-size:18px;letter-spacing:.5px;color:#1d1a2b">${LX(en,es)}</td></tr>`;
@@ -3379,4 +3380,7 @@ const _gt=GAME.tick;GAME.tick=function(dt,t){
 };
 }
 
+
+// ---- MOBILE bridge (mobile.js reads/drives the game through this; no effect on gameplay)
+window.__CFC={get cam(){return cam;},get pl(){return pl;},get S(){return S;},get mode(){return mode;},get modal(){return modal;},get M(){return M;},get base(){return base;},get truck(){return truck;},get EV(){return EV;},get ctx(){return ctx;},st,act,closeModal,nextTarget,VOL,openProbe,openFilter,openShip};
 })();
