@@ -1131,7 +1131,7 @@ cv.addEventListener('pointermove',e=>{const lk=document.pointerLockElement===cv;
   $('#g-mx').onclick=()=>{if(modal&&modal.close!==false)closeModal();};
 }
 const K=c=>!!keys[c];
-function inputAxes(){let x=(K('KeyD')||K('ArrowRight')?1:0)-(K('KeyA')||K('ArrowLeft')?1:0)+joy.x;let y=(K('KeyW')||K('ArrowUp')?1:0)-(K('KeyS')||K('ArrowDown')?1:0)+joy.y;return [clamp(x,-1,1),clamp(y,-1,1)];}
+function inputAxes(){if(window.MOB&&MOB.on&&MOB.axes){const r=MOB.axes(joy,K);if(r)return r;}let x=(K('KeyD')||K('ArrowRight')?1:0)-(K('KeyA')||K('ArrowLeft')?1:0)+joy.x;let y=(K('KeyW')||K('ArrowUp')?1:0)-(K('KeyS')||K('ArrowDown')?1:0)+joy.y;return [clamp(x,-1,1),clamp(y,-1,1)];}
 
 // ------------------------------------------------------------ interactions
 let ctx=null;   // current context action
@@ -2277,7 +2277,7 @@ function updateCamera(dt){
   else{cam.show=lerp(cam.show||0,cam.fp&&fpShow()&&fpFront()&&mode==='play'?2.45:0,Math.min(1,dt*2.5));const dist=(pl.inTruck?1.85+.55*Math.max(0,chase):1.25)*cam.zoom*(1+.25*cam.show/2.45),pitch=clamp((pl.inTruck?.38-.1*Math.max(0,chase):.34)+cam.dragPitch+(cam.show>.05?-.12*cam.show/2.45:0),.05,1.35),yw=cam.yaw+cam.dragYaw+cam.show;
     want=new THREE.Vector3(tgt.x-Math.cos(yw)*Math.cos(pitch)*dist,tgt.y+Math.sin(pitch)*dist,tgt.z+Math.sin(yw)*Math.cos(pitch)*dist);
     const gy=Wd.heightAt(want.x,want.z)+.18;if(want.y<gy)want.y=gy;}
-  C.position.lerp(want,1-Math.exp(-dt*(cam.map?4:9)));if(EV.shake>0){const sh=EV.shake*.05;C.position.x+=(Math.random()-.5)*sh;C.position.y+=(Math.random()-.5)*sh;C.position.z+=(Math.random()-.5)*sh;}{const ov=cam.map&&window.MOB&&MOB.on;if(ov){const yu=cam.yaw+cam.dragYaw;C.up.set(Math.cos(yu),0,-Math.sin(yu));}else C.up.set(0,1,0);}C.lookAt(tgt);Wd.controls.target.copy(tgt);
+  C.position.lerp(want,1-Math.exp(-dt*(cam.map?(window.MOB&&MOB.on?16:4):9)));if(EV.shake>0){const sh=EV.shake*.05;C.position.x+=(Math.random()-.5)*sh;C.position.y+=(Math.random()-.5)*sh;C.position.z+=(Math.random()-.5)*sh;}{const ov=cam.map&&window.MOB&&MOB.on;if(ov)C.up.set(0,0,-1);else C.up.set(0,1,0);}C.lookAt(tgt);Wd.controls.target.copy(tgt);
 }
 
 // ------------------------------------------------------------ HUD

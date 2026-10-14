@@ -5,7 +5,7 @@
    The game core (game.js/world.js) is only touched through the small, marked `MOB` hooks and the `window.__CFC` bridge. */
 (function(){
 'use strict';
-const MOB=window.MOB={on:true,zoomMul:1,auto:true,H:30,zone:null};
+const MOB=window.MOB={on:true,zoomMul:1,auto:false,H:12,zone:null,baseH:12};
 const D=document,root=D.documentElement;
 root.classList.add('mobile');
 const addBody=()=>{D.body.classList.add('touch','mobile');};
@@ -25,18 +25,31 @@ const view=()=>({W:innerWidth,H:innerHeight});
 /* ---------- overhead map camera (called from updateCamera) ---------- */
 let ground=0;
 MOB.mapWant=function(tgt,dt){
-  const g=G(),W=window.WORLD,cam=W.camera,[px,pz]=pos();let cx=px,cz=pz,H=14;
+  const g=G(),W=window.WORLD,cam=W.camera,[px,pz]=pos();let cx=px,cz=pz,H=MOB.baseH;
+  if(!g.pl.inTruck){g.cam.yaw=Math.PI/2;g.cam.dragYaw=0;}   // on foot in the map: forward = screen up (north), like a classic top-down game
   const tp=targetPos(),th=Math.tan(cam.fov*Math.PI/360),asp=cam.aspect||2;
-  if(tp&&MOB.auto){const dx=tp[0]-px,dz=tp[1]-pz;cx=px+dx*.5;cz=pz+dz*.5;
+  if(tp&&MOB.auto){const dx=tp[0]-px,dz=tp[1]-pz;cx=px+dx*.5;cz=pz+dz*.5;   // optional "show target" mode (button)
     H=Math.max((Math.abs(dx)/2+.45)/(th*asp),(Math.abs(dz)/2+.45)/th);}
   H=clamp(H*MOB.zoomMul,4,72);
-  MOB.H+= (H-MOB.H)*(1-Math.exp(-dt*3));
-  const gy=W.heightAt(cx,cz);ground+=(gy-ground)*(1-Math.exp(-dt*2));
+  MOB.H+=(H-MOB.H)*(1-Math.exp(-dt*6));
+  const gy=W.heightAt(cx,cz);ground+=(gy-ground)*(1-Math.exp(-dt*4));
   tgt.set(cx,ground,cz);
-  // stay above the surrounding peaks (terrain relief is exaggerated): otherwise mountains poke into the view and it looks tilted
+  // stay above the surrounding peaks (terrain relief is exaggerated)
   let hm=gy;const R=Math.max(1.2,MOB.H*.8);for(let i=0;i<8;i++){const an=i*Math.PI/4,h=W.heightAt(cx+Math.cos(an)*R,cz+Math.sin(an)*R);if(h>hm)hm=h;}
-  const alt=Math.max(ground+MOB.H,hm+MOB.H*.35+.5);MOB.alt=(MOB.alt==null?alt:MOB.alt+(alt-MOB.alt)*(1-Math.exp(-dt*2.5)));
+  const alt=Math.max(ground+MOB.H,hm+MOB.H*.35+.5);MOB.alt=(MOB.alt==null?alt:MOB.alt+(alt-MOB.alt)*(1-Math.exp(-dt*4)));
   return new window.THREE.Vector3(cx,MOB.alt,cz+.0005);
+};
+/* screen-relative controls in the map (Nintendo / phone-game style): the stick points where you want to go on screen */
+const angD=(a,b)=>{let d=(b-a+Math.PI)%(2*Math.PI);if(d<0)d+=2*Math.PI;return d-Math.PI;};
+MOB.axes=function(joy,K){
+  const g=G();if(!g||!g.cam.map||g.mode!=='play')return null;
+  let sx=(K('KeyD')||K('ArrowRight')?1:0)-(K('KeyA')||K('ArrowLeft')?1:0)+joy.x,sy=(K('KeyW')||K('ArrowUp')?1:0)-(K('KeyS')||K('ArrowDown')?1:0)+joy.y;   // sy>0 = screen up
+  const m=Math.min(1,Math.hypot(sx,sy));if(m<.08)return [0,0];
+  if(!g.pl.inTruck)return [clamp(sx,-1,1),clamp(sy,-1,1)];   // on foot: yaw is locked to north, so stick = screen direction already
+  // truck: steer toward the stick direction (screen up = north = -z); stick behind you = U-turn arc (always drives forward, like arcade games)
+  const wy=Math.atan2(sy,sx);                            // forward=(cos y, -sin y)=(sx,-sy)/|.| -> y=atan2(sy,sx)
+  const d=angD(g.truck.yaw,wy);
+  return [clamp(-d*2.2,-1,1),m*Math.max(.45,Math.cos(d))];
 };
 MOB.onStart=function(){
   const g=G();if(!g)return;MOB.zoomMul=1;MOB.zone=null;
@@ -60,7 +73,7 @@ function bindTouch(){
     if(tap&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>14)tap=null;},true);
   const up=e=>{P.delete(e.pointerId);if(P.size<2)d0=0;
     if(e.type==='pointerup'&&tap&&G()&&G().cam.map&&!pinched&&performance.now()-tap.t<450){
-      const now=performance.now();if(now-lastTap<320){MOB.zoomMul=1;MOB.auto=true;lastTap=0;}else lastTap=now;
+      const now=performance.now();if(now-lastTap<320){MOB.zoomMul=1;MOB.auto=false;lastTap=0;}else lastTap=now;
       pickSite(tap.x,tap.y);}
     tap=null;};
   cv.addEventListener('pointerup',up,true);cv.addEventListener('pointercancel',up,true);
@@ -69,13 +82,13 @@ function bindTouch(){
 function pickSite(sx,sy){const g=G(),W=window.WORLD,cam=W.camera,V=new window.THREE.Vector3();let best=null,bd=48;  // 48 px radius = comfortable finger target
   const test=(x,z,obj)=>{V.set(x,W.heightAt(x,z),z).project(cam);if(V.z>1)return;const px=(V.x*.5+.5)*innerWidth,py=(-V.y*.5+.5)*innerHeight,d=Math.hypot(px-sx,py-sy);if(d<bd){bd=d;best=obj;}};
   g.M.forEach(m=>{if(!g.st(m.c).done)test(m.ax,m.az,m);});test(g.base.x,g.base.z,'base');
-  if(best){g.S.target=best;MOB.auto=true;MOB.zoomMul=1;try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
+  if(best){g.S.target=best;try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}
     const it=[...D.querySelectorAll('#g-misl .it')];  // refresh mission list highlight
     g.nextTarget&&0;}
 }
 
 /* ---------- contextual camera: map <-> first person ---------- */
-function goFP(){const c=G().cam;c.map=false;c.fp=true;D.body.classList.remove('mb-map');}
+function goFP(){const g=G(),c=g.cam;if(g.pl.yaw!=null&&!g.pl.inTruck){c.yaw=g.pl.yaw;c.dragYaw=0;}c.map=false;c.fp=true;D.body.classList.remove('mb-map');}
 function goMap(){const c=G().cam;c.map=true;c.fp=true;D.body.classList.add('mb-map');}
 let fpModalPrev=false,zone=null;
 const ZIN=.7,ZOUT=1.15;   // km (1 world unit = 1 km)
@@ -119,11 +132,11 @@ function carBtn(g){
 let chip=null;
 function hud(g){
   if(!chip){chip=D.createElement('div');chip.id='mb-tgt';chip.innerHTML='<b id="mb-ar">▲</b><span id="mb-tx"></span><button id="mb-next" aria-label="next">⏭</button><button id="mb-fit" aria-label="fit">◎</button>';D.body.appendChild(chip);
-    chip.querySelector('#mb-next').onclick=()=>{g.nextTarget();MOB.auto=true;MOB.zoomMul=1;};chip.querySelector('#mb-fit').onclick=()=>{MOB.auto=true;MOB.zoomMul=1;};}
+    chip.querySelector('#mb-next').onclick=()=>{g.nextTarget();MOB.zoomMul=1;};chip.querySelector('#mb-fit').onclick=()=>{MOB.auto=!MOB.auto;MOB.zoomMul=1;chip.querySelector('#mb-fit').style.background=MOB.auto?'#8ac926':'';};}
   const show=g.cam.map;chip.style.display=show?'flex':'none';if(!show)return;
   const tp=targetPos(),[x,z]=pos();if(!tp){chip.querySelector('#mb-tx').textContent=tx('Pick a site','Elige un sitio');return;}
   const dx=tp[0]-x,dz=tp[1]-z,km=Math.hypot(dx,dz);
-  {const yw=g.cam.yaw+g.cam.dragYaw,fx=Math.cos(yw),fz=-Math.sin(yw),rx=-fz,rz=fx;chip.querySelector('#mb-ar').style.transform=`rotate(${Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)}rad)`;}
+  chip.querySelector('#mb-ar').style.transform=`rotate(${Math.atan2(dx,-dz)}rad)`;
   const t=`${tp[2]} · ${km<1?Math.round(km*1000)+' m':km.toFixed(1)+' km'}`;const e=chip.querySelector('#mb-tx');if(e.textContent!==t)e.textContent=t;
 }
 
