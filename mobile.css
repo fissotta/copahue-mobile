@@ -66,3 +66,28 @@ body.mb-fpm #g-tbtn,body.mb-fpm #g-tT{display:none!important}
   .g-ov.fp3d #g-mb{max-height:calc(100vh - 78px);overflow:auto;touch-action:pan-y}
   .g-ov.fp3d .g-btn{min-height:48px;font-size:17px}
 }
+
+/* ---- smaller UI (the first version covered too much of the 3D view) ---- */
+body.mobile #g-top{transform:scale(.6);transform-origin:left top;left:calc(6px + var(--sl));top:calc(4px + var(--st))}
+body.mobile #g-cmpx{transform:scale(.55);transform-origin:50% 0;top:calc(2px + var(--st))!important}
+body.mobile #g-pname{display:none!important}
+body.mobile #g-stat{font-size:10px!important;line-height:1.15!important;padding:3px 6px!important;left:calc(150px + var(--sl))!important;bottom:calc(8px + var(--sb))!important;max-width:26vw;opacity:.92}
+body.mobile #g-stat *{font-size:inherit}
+body.mobile #g-joy{width:104px;height:104px;left:calc(14px + var(--sl));bottom:calc(14px + var(--sb))}
+body.mobile #g-joy i{width:44px;height:44px;margin:-22px 0 0 -22px}
+body.mobile #g-tbtn{right:calc(10px + var(--sr));bottom:calc(10px + var(--sb));gap:5px;max-width:58vw}
+body.mobile #g-tbtn .g-btn,body.mobile #g-tT{font-size:14px!important;min-width:50px;min-height:44px;padding:4px 9px;border-width:2.5px;box-shadow:2px 2px 0 var(--ink)}
+body.mobile #g-prompt{font-size:12px!important;padding:3px 9px!important;top:auto!important;bottom:calc(60px + var(--sb))!important}
+body.mobile #g-toast{top:calc(34px + var(--st))!important;font-size:11.5px!important;padding:4px 10px!important;max-width:58vw!important;line-height:1.25}
+body.mobile .glbl{font-size:12.5px!important;padding:2px 6px 3px!important;border-width:2px!important;box-shadow:2px 2px 0 var(--ink)}
+body.mobile .glbl small{font-size:9px!important}
+body.mobile .glbl.fpsub{font-size:12px!important;bottom:70px!important;padding:3px 8px!important;max-width:60vw!important}
+body.mobile #g-radio{transform:scale(.7);transform-origin:right top}
+body.mobile #g-mb{font-size:13px}
+body.mobile .g-btn{font-size:14px}
+body.mb-map .glbl{font-size:14px!important;padding:3px 8px 4px!important;min-height:0}
+body.mb-map .glbl.tg small,body.mb-map .glbl.base small{font-size:9px!important}
+#mb-tgt{font-size:15px;padding:3px 6px;gap:6px}#mb-tgt b{font-size:20px;width:24px}#mb-tgt button{min-width:44px;min-height:44px;font-size:17px}
+#mb-car{font-size:14px}
+#mb-hint{position:fixed;left:50%;bottom:calc(8px + var(--sb));transform:translateX(-50%);z-index:90;max-width:80vw;padding:6px 10px;border:2.5px solid var(--ink);border-radius:10px;background:#fffdf5;font:700 12px/1.3 'Comic Neue',sans-serif;display:flex;gap:8px;align-items:center;box-shadow:2px 2px 0 var(--ink)}
+#mb-hint button{min-width:36px;min-height:36px;border:2px solid var(--ink);border-radius:8px;background:var(--yel)}

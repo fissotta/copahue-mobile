@@ -33,7 +33,10 @@ MOB.mapWant=function(tgt,dt){
   MOB.H+= (H-MOB.H)*(1-Math.exp(-dt*3));
   const gy=W.heightAt(cx,cz);ground+=(gy-ground)*(1-Math.exp(-dt*2));
   tgt.set(cx,ground,cz);
-  return new window.THREE.Vector3(cx,ground+MOB.H,cz+.0005);
+  // stay above the surrounding peaks (terrain relief is exaggerated): otherwise mountains poke into the view and it looks tilted
+  let hm=gy;const R=Math.max(1.2,MOB.H*.8);for(let i=0;i<8;i++){const an=i*Math.PI/4,h=W.heightAt(cx+Math.cos(an)*R,cz+Math.sin(an)*R);if(h>hm)hm=h;}
+  const alt=Math.max(ground+MOB.H,hm+MOB.H*.35+.5);MOB.alt=(MOB.alt==null?alt:MOB.alt+(alt-MOB.alt)*(1-Math.exp(-dt*2.5)));
+  return new window.THREE.Vector3(cx,MOB.alt,cz+.0005);
 };
 MOB.onStart=function(){
   const g=G();if(!g)return;MOB.zoomMul=1;MOB.zone=null;
@@ -44,20 +47,23 @@ MOB.onStart=function(){
 /* ---------- pinch zoom + tap a site / double-tap reset (map only) ---------- */
 function bindTouch(){
   const cv=window.WORLD&&WORLD.renderer&&WORLD.renderer.domElement;if(!cv||bindTouch.done)return;bindTouch.done=1;
-  const P=new Map();let d0=0,z0=1,tap=null,lastTap=0;
-  cv.addEventListener('pointerdown',e=>{if(!G()||!G().cam.map)return;P.set(e.pointerId,[e.clientX,e.clientY]);
-    if(P.size===2){const [a,b]=[...P.values()];d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=MOB.zoomMul;tap=null;}
-    else if(P.size===1)tap={x:e.clientX,y:e.clientY,t:performance.now()};},true);
+  const P=new Map();let d0=0,z0=1,tap=null,lastTap=0,pinched=false;
+  const cam=()=>G().cam;
+  cv.addEventListener('pointerdown',e=>{if(!G()||G().mode!=='play')return;P.set(e.pointerId,[e.clientX,e.clientY]);
+    if(P.size===2){const [a,b]=[...P.values()];d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=cam().map?MOB.zoomMul:cam().zoom;tap=null;pinched=true;}
+    else if(P.size===1){tap={x:e.clientX,y:e.clientY,t:performance.now()};pinched=false;}},true);
   cv.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);
-    if(P.size===2&&d0>0){const [a,b]=[...P.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);MOB.zoomMul=clamp(z0*d0/d,.25,3);}
+    if(P.size>=2&&d0>0){e.stopImmediatePropagation();const [a,b]=[...P.values()];const r=d0/Math.hypot(a[0]-b[0],a[1]-b[1]),c=cam();
+      if(c.map)MOB.zoomMul=clamp(z0*r,.25,3);
+      else if(c.fp){if(r<.72){c.fp=false;c.zoom=1;d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=1;}}   // spread fingers in first person -> step back to third person
+      else{const z=z0*r;if(z<.5&&r>1.25){c.fp=true;}else c.zoom=clamp(z,.5,4);}}              // pinch in third person = dolly; pinch hard in -> back to first person
     if(tap&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>14)tap=null;},true);
   const up=e=>{P.delete(e.pointerId);if(P.size<2)d0=0;
-    if(e.type==='pointerup'&&tap&&G()&&G().cam.map&&performance.now()-tap.t<450){
+    if(e.type==='pointerup'&&tap&&G()&&G().cam.map&&!pinched&&performance.now()-tap.t<450){
       const now=performance.now();if(now-lastTap<320){MOB.zoomMul=1;MOB.auto=true;lastTap=0;}else lastTap=now;
       pickSite(tap.x,tap.y);}
     tap=null;};
   cv.addEventListener('pointerup',up,true);cv.addEventListener('pointercancel',up,true);
-  // wheel for desktop testing
   cv.addEventListener('wheel',e=>{if(G()&&G().cam.map)MOB.zoomMul=clamp(MOB.zoomMul*(e.deltaY>0?1.1:.9),.25,3);},{passive:true});
 }
 function pickSite(sx,sy){const g=G(),W=window.WORLD,cam=W.camera,V=new window.THREE.Vector3();let best=null,bd=48;  // 48 px radius = comfortable finger target
@@ -88,23 +94,25 @@ function ctxLoop(){
   if(fpModal&&!fpModalPrev&&g.cam.map)goFP();
   if(!fpModal&&fpModalPrev&&!zone&&!g.cam.map&&!g.pl.inTruck)goMap();
   fpModalPrev=fpModal;
-  hud(g);me(g);perfMode(g);
+  hud(g);actors(g);carBtn(g);
 }
 
-/* ---------- perf: the first-person detail layer (grass, flowers, pebbles, ~200k tris) is invisible from the overhead map -> skip it there ---------- */
-let fpw=null;
-function perfMode(g){const sc=window.WORLD&&WORLD.scene;if(!sc)return;if(!fpw||!fpw.parent)fpw=sc.getObjectByName('fpworld');if(fpw&&fpw.visible===g.cam.map)fpw.visible=!g.cam.map;}
+/* ---------- map: enlarge the truck / person (instead of a marker that hides them); restore when leaving the map ---------- */
+const AC=[];
+function scaleOne(key,obj,on,k){let r=AC.find(x=>x.key===key);if(r&&r.obj!==obj){r=null;AC.splice(AC.findIndex(x=>x.key===key),1);}
+  if(!obj)return;if(!r){r={key,obj,base:obj.scale.clone(),on:false};AC.push(r);}
+  if(on){r.obj.scale.copy(r.base).multiplyScalar(k);r.on=true;}else if(r.on){r.obj.scale.copy(r.base);r.on=false;}}
+function actors(g){const on=g.cam.map,k=clamp(MOB.H*.42,1.5,26);scaleOne('truck',g.truck.g,on,k);scaleOne('pl',g.pl.g,on&&!g.pl.inTruck,k);}
 
-/* ---------- 'you are here' marker (overhead map) ---------- */
-let meEl=null;const V3=()=>new window.THREE.Vector3();let _v=null;
-function me(g){
-  if(!meEl){meEl=D.createElement('div');meEl.id='mb-me';meEl.innerHTML='<u><i></i><b></b></u>';D.body.appendChild(meEl);_v=V3();}
-  if(!g.cam.map){meEl.style.display='none';return;}
-  const W=window.WORLD,[x,z]=pos();_v.set(x,W.heightAt(x,z)+.02,z).project(W.camera);
-  if(_v.z>1){meEl.style.display='none';return;}
-  const yaw=g.pl.inTruck?g.truck.yaw:g.pl.yaw;
-  meEl.style.display='block';meEl.style.transform=`translate(${((_v.x*.5+.5)*innerWidth).toFixed(1)}px,${((-_v.y*.5+.5)*innerHeight).toFixed(1)}px)`;
-  meEl.firstChild.style.transform=`rotate(${(Math.PI/2-yaw).toFixed(3)}rad)`;
+/* ---------- get in / out of the truck button (always available, not only the contextual E) ---------- */
+let car=null;
+function carBtn(g){
+  if(!car){const tb=D.querySelector('#g-tbtn');if(!tb)return;car=D.createElement('button');car.className='g-btn';car.id='mb-car';tb.insertBefore(car,tb.firstChild);
+    car.addEventListener('pointerdown',e=>{e.preventDefault();const g=G();
+      if(g.pl.inTruck){if(Math.abs(g.truck.speed)>.45){g.toast(tx('Stop the truck first','Frena primero la camioneta'),true,1600);}else g.exitTruck();}
+      else{const d=Math.hypot(g.pl.x-g.truck.x,g.pl.z-g.truck.z);if(d<1.2)g.enterTruck();else g.toast(tx('Walk closer to the truck ('+d.toFixed(1)+' km)','Acércate a la camioneta ('+d.toFixed(1)+' km)'),true,1800);}});}
+  const t=g.pl.inTruck?'🚶 '+tx('GET OUT','BAJAR'):'🛻 '+tx('GET IN','SUBIR');if(car.textContent!==t)car.textContent=t;
+  car.style.display=(g.mode==='play'&&!g.modal)?'':'none';
 }
 
 /* ---------- map HUD: target chip with arrow + distance ---------- */
@@ -115,7 +123,7 @@ function hud(g){
   const show=g.cam.map;chip.style.display=show?'flex':'none';if(!show)return;
   const tp=targetPos(),[x,z]=pos();if(!tp){chip.querySelector('#mb-tx').textContent=tx('Pick a site','Elige un sitio');return;}
   const dx=tp[0]-x,dz=tp[1]-z,km=Math.hypot(dx,dz);
-  chip.querySelector('#mb-ar').style.transform=`rotate(${Math.atan2(dx,-dz)}rad)`;
+  {const yw=g.cam.yaw+g.cam.dragYaw,fx=Math.cos(yw),fz=-Math.sin(yw),rx=-fz,rz=fx;chip.querySelector('#mb-ar').style.transform=`rotate(${Math.atan2(dx*rx+dz*rz,dx*fx+dz*fz)}rad)`;}
   const t=`${tp[2]} · ${km<1?Math.round(km*1000)+' m':km.toFixed(1)+' km'}`;const e=chip.querySelector('#mb-tx');if(e.textContent!==t)e.textContent=t;
 }
 
@@ -149,6 +157,16 @@ function perfOverlay(){
   (function f(t){const R=window.WORLD&&WORLD.renderer;if(R){const i=R.info;i.autoReset=false;calls=i.render.calls;tris=i.render.triangles;i.reset();}
     n++;if(t-t0>1000){let s='fps '+(n*1000/(t-t0)).toFixed(0);if(R){const i=R.info;s+=`\ncalls ${calls} tris ${(tris/1000).toFixed(0)}k\ngeo ${i.memory.geometries} tex ${i.memory.textures}\npx ${R.domElement.width}x${R.domElement.height}`;if(performance.memory)s+=`\nheap ${(performance.memory.usedJSHeapSize/1048576).toFixed(0)}MB`;}o.textContent=s;n=0;t0=t;}requestAnimationFrame(f);})(performance.now());
 }
+
+/* ---------- iOS Safari cannot go fullscreen from a page: suggest installing it (standalone = no Safari bars) ---------- */
+addEventListener('DOMContentLoaded',()=>{
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const standalone=navigator.standalone||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches;
+  let seen=false;try{seen=localStorage.getItem('mbHint')==='1';}catch(e){}
+  if(!ios||standalone||seen)return;
+  const h=D.createElement('div');h.id='mb-hint';h.innerHTML=tx('For fullscreen: tap <b>Share</b> ⎋ → <b>Add to Home Screen</b>, then open it from there.','Para pantalla completa: toca <b>Compartir</b> ⎋ → <b>Añadir a pantalla de inicio</b> y ábrelo desde ahí.')+' <button aria-label="close">✕</button>';
+  h.querySelector('button').onclick=()=>{h.remove();try{localStorage.setItem('mbHint','1');}catch(e){}};D.body.appendChild(h);setTimeout(()=>h.remove(),25000);
+});
 
 /* ---------- PWA ---------- */
 if('serviceWorker' in navigator&&location.protocol!=='file:'){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
