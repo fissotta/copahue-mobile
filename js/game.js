@@ -907,10 +907,10 @@ const WX={tod:(()=>{const h=parseFloat(new URLSearchParams(location.search).get(
 const V3=THREE.Vector3;
 function lerp3(a,b,t){return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];}
 function buildWeather(){
-  const N=2600,p=new Float32Array(N*3);for(let i=0;i<N;i++){p[i*3]=(Math.random()-.5)*9;p[i*3+1]=Math.random()*5;p[i*3+2]=(Math.random()-.5)*9;}
+  const N=window.__MOBILE?1100:2600,p=new Float32Array(N*3);for(let i=0;i<N;i++){p[i*3]=(Math.random()-.5)*9;p[i*3+1]=Math.random()*5;p[i*3+2]=(Math.random()-.5)*9;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));
   WX.parts=new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:.028,transparent:true,opacity:0,depthWrite:false,alphaTest:.3,map:(()=>{const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');const gr=x.createRadialGradient(16,16,2,16,16,15);gr.addColorStop(0,'#fff');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,32,32);return new THREE.CanvasTexture(c);})()}));WX.parts.frustumCulled=false;Wd.scene.add(WX.parts);
-  const M=1400,q=new Float32Array(M*6);for(let i=0;i<M;i++){const x=(Math.random()-.5)*8,y=Math.random()*5,z=(Math.random()-.5)*8;q.set([x,y,z,x-.02,y-.14,z],i*6);}
+  const M=window.__MOBILE?600:1400,q=new Float32Array(M*6);for(let i=0;i<M;i++){const x=(Math.random()-.5)*8,y=Math.random()*5,z=(Math.random()-.5)*8;q.set([x,y,z,x-.02,y-.14,z],i*6);}
   const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(q,3));
   WX.rain=new THREE.LineSegments(g2,new THREE.LineBasicMaterial({color:0xbfe9ff,transparent:true,opacity:0,depthWrite:false}));WX.rain.frustumCulled=false;Wd.scene.add(WX.rain);
   // truck headlights for the night

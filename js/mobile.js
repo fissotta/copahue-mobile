@@ -88,8 +88,12 @@ function ctxLoop(){
   if(fpModal&&!fpModalPrev&&g.cam.map)goFP();
   if(!fpModal&&fpModalPrev&&!zone&&!g.cam.map&&!g.pl.inTruck)goMap();
   fpModalPrev=fpModal;
-  hud(g);me(g);
+  hud(g);me(g);perfMode(g);
 }
+
+/* ---------- perf: the first-person detail layer (grass, flowers, pebbles, ~200k tris) is invisible from the overhead map -> skip it there ---------- */
+let fpw=null;
+function perfMode(g){const sc=window.WORLD&&WORLD.scene;if(!sc)return;if(!fpw||!fpw.parent)fpw=sc.getObjectByName('fpworld');if(fpw&&fpw.visible===g.cam.map)fpw.visible=!g.cam.map;}
 
 /* ---------- 'you are here' marker (overhead map) ---------- */
 let meEl=null;const V3=()=>new window.THREE.Vector3();let _v=null;

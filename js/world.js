@@ -944,6 +944,8 @@ const GFX_PRESETS={
   medium:{dpr:1.5, hq:1, hatch:1, shadow:0, ink:2.1, lod:40, tlod:8,  glod:12, aa:1, label:'MED'},
   high:  {dpr:2,   hq:1, hatch:1, shadow:1, ink:2.4, lod:70, tlod:13, glod:20, aa:1, label:'HIGH'}
 };
+if(window.__MOBILE){  // mobile: no 'high' tier (shadows / DPR 2), lighter draw distances, pixel ratio capped at 1.5
+  GFX_PRESETS.low.lod=18;GFX_PRESETS.low.tlod=4;GFX_PRESETS.low.glod=6;GFX_PRESETS.medium.dpr=1.5;GFX_PRESETS.medium.lod=30;GFX_PRESETS.medium.tlod=6;GFX_PRESETS.medium.glod=9;GFX_PRESETS.high=GFX_PRESETS.medium;}
 // soften cast shadows: shadowed areas keep 45% of direct sun so toon bands + hatching still read
 THREE.ShaderChunk.lights_fragment_begin=THREE.ShaderChunk.lights_fragment_begin.replace('receiveShadow ) ) ? getShadow(','receiveShadow ) ) ? .45+.55*getShadow(');
 const GFX=(()=>{let mode='auto';try{mode=localStorage.getItem('copahue.gfx')||'auto';}catch(e){}
@@ -951,7 +953,8 @@ const GFX=(()=>{let mode='auto';try{mode=localStorage.getItem('copahue.gfx')||'a
   let gpu='';try{const gl=renderer.getContext();const ext=gl.getExtension('WEBGL_debug_renderer_info');gpu=ext?String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)):'';}catch(e){}
   const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
   let guess='medium';
-  if(mobile||/SwiftShader|llvmpipe|Mali|Adreno|PowerVR|Intel.*HD Graphics|Intel\(R\) HD|GMA/i.test(gpu))guess='low';
+  if(window.__MOBILE){const strong=/Apple GPU/i.test(gpu)||((navigator.deviceMemory||4)>=6&&(navigator.hardwareConcurrency||4)>=8);guess=strong?'medium':'low';if(mode==='high')mode='auto';}  // mobile: start at medium only on strong devices; the adaptive scaler lowers it if FPS drops
+  else if(mobile||/SwiftShader|llvmpipe|Mali|Adreno|PowerVR|Intel.*HD Graphics|Intel\(R\) HD|GMA/i.test(gpu))guess='low';
   else if(/Apple M|Apple GPU|NVIDIA|GeForce|RTX|Radeon RX|Radeon Pro|AMD Radeon\(TM\) Graphics/i.test(gpu))guess='high';
   return {mode,gpu,guess,level:mode==='auto'?guess:mode,scale:1,acc:0,n:0,good:0,bad:0};
 })();
@@ -1054,7 +1057,8 @@ function chunkInstanced(src,parent,secondary,cell,lo){cell=cell||22;const out=ne
     if(lg){const il=mk(lg,list,sph.clone());il.userData.lod={c:sph.center.clone(),r:sph.radius,lo:true};im.userData.lod.pair=il;il.visible=false;parent.add(il);}
     out.set(key,im);});
   src.geometry=new THREE.BufferGeometry();src.count=0;if(src.parent)src.parent.remove(src);return out;}
-function updateLOD(){const cp=camera.position,P=GFX_PRESETS[GFX.level];const d2=P.lod*P.lod;
+function updateLOD(){const cp=camera.position,P0=GFX_PRESETS[GFX.level];const mm=(window.MOB&&window.__CFC&&__CFC.cam.map)?.55:1,P=mm===1?P0:Object.assign({},P0,{lod:P0.lod*mm,tlod:P0.tlod*mm,glod:P0.glod*mm});  // mobile overhead map: shorter draw distances
+  const d2=P.lod*P.lod;
   for(let i=0;i<LOD_CHUNKS.length;i++){const o=LOD_CHUNKS[i],u=o.userData.lod;if(u.sec){o.visible=u.c.distanceToSquared(cp)<d2;continue;}
     if(u.pair){const d=Math.max(0,u.c.distanceTo(cp)-u.r*.6);const near=d<P.tlod;o.visible=near;u.pair.visible=!near;}}
   updateTerrainLOD(cp,P);}
@@ -1326,6 +1330,7 @@ function updateLabels(){losFrame++;
 }
 function animate(){
   requestAnimationFrame(animate);
+  if(window.__MOBILE){const n=performance.now();if(n-(animate._l||0)<15.5)return;animate._l=n;}  // mobile: cap at ~60 fps (120 Hz phones would otherwise render twice as often)
   const rawDt=clock.getDelta(),dt=Math.min(rawDt,.05),t=clock.elapsedTime;gfxFrame(rawDt);postMat.uniforms.time.value=t;WIND.time.value=t;
   const GA=window.GAME&&GAME.active;
   if(tween&&!GA){tween.t=Math.min(1,(performance.now()-tween.start)/1000/tween.dur);const k=tween.t>=1?1:(tween.t<.5?4*tween.t**3:1-Math.pow(-2*tween.t+2,3)/2);

@@ -76,7 +76,7 @@ const col=new T.Color(),m4=new T.Matrix4(),q=new T.Quaternion(),e=new T.Euler(),
 const PAL={coiron:['#cdbb6a','#bda95a','#d8c98a','#a9a054'],green:['#6a9a3a','#5c8a34','#7fa844'],neneo:['#7a9a3c','#6d8f38','#8aa44a'],stone:['#6e6660','#8a8078','#5a4e4a','#9a9088'],
   scoria:['#8a3e2e','#6b2e24','#a24a34'],sulfur:['#e0c84a','#d8b43a','#f0dc6a'],ochre:['#b8672a','#c97a34','#9a5424'],flower:['#ffd23f','#b15cff','#ff6fa8','#ffffff'],fern:['#4f8a3a','#5f9a42'],cane:['#8aa44a','#7a9a3c']};
 function pick(a,h){return a[Math.floor(h*a.length)%a.length];}
-function scatter(px,pz,I){const C=.12,R=5,n0=Math.floor(R/C);let fk=1;const cnt={};for(const k in meshes)cnt[k]=0;
+function scatter(px,pz,I){const C=window.__MOBILE?.14:.12,R=window.__MOBILE?3.6:5,n0=Math.floor(R/C);let fk=1;const cnt={};for(const k in meshes)cnt[k]=0;
   const put=(key,x,y,z,s,ry,c,tilt)=>{s*=fk;if(s<.02)return;const im=meshes[key];const i=cnt[key];if(i>=im.userData.max)return;cnt[key]++;e.set(tilt||0,ry,tilt?tilt*.7:0);q.setFromEuler(e);sc.set(s*K,s*K,s*K);m4.compose(v.set(x,y,z),q,sc);im.setMatrixAt(i,m4);col.set(c);im.setColorAt(i,col);};
   const RP=(I.roadPts||[]).filter(p=>Math.abs(p[0]-px)<R+.2&&Math.abs(p[1]-pz)<R+.2);const road=(x,z)=>{let b=1e9;for(const p of RP){const d=(p[0]-x)**2+(p[1]-z)**2;if(d<b)b=d;}return Math.sqrt(b);};
   const ci=Math.floor(px/C),cj=Math.floor(pz/C);
@@ -173,7 +173,8 @@ FPW.fauna=function(x,z){const o=[];if(!built)return o;const d=(ax,az)=>Math.hypo
 
 // ------------------------------------------------------------ per frame
 FPW.update=function(dt,I){if(!window.WORLD)return;if(!built)build();wind.value+=dt;const t=wind.value;
-  const C=W.camera,near=Math.hypot(C.position.x-I.x,C.position.z-I.z)<3.5&&I.play;root.visible=true;
+  const C=W.camera,near=Math.hypot(C.position.x-I.x,C.position.z-I.z)<3.5&&I.play;root.visible=!(window.MOB&&window.__CFC&&__CFC.cam.map);  // mobile: invisible from the overhead map, skip ~200k tris
+  
   for(const k in meshes)meshes[k].visible=near;
   I.dense=!!(window.REAL&&REAL.on);if(I.dense!==FPW._dense){FPW._dense=I.dense;last.x=1e9;}
   if(near&&(Math.hypot(I.x-last.x,I.z-last.z)>.2)){last.x=I.x;last.z=I.z;scatter(I.x,I.z,I);try{treesNear(I.x,I.z);}catch(e){console.warn('trees',e);}}
