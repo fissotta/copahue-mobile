@@ -1140,7 +1140,7 @@ const kits=[];  // portable filtration kits {x,z,g,lbl}
 function findContext(){
   if(pl.inTruck){
     if(Math.hypot(truck.x-base.x,truck.z-base.z)<1.4&&Math.abs(truck.speed)<.45)return {E:{t:'Get out of the truck',f:exitTruck},Q:{t:'Walk into the MEL Field Base to ship samples',info:true}};
-    if(Math.abs(truck.speed)<.35&&truckInRiver())return {E:{t:LX('🌊 You are in the river — drive onto dry ground to park','🌊 Estás en el río — sal a tierra firme para estacionar'),info:true}};
+    if(false&&Math.abs(truck.speed)<.35&&truckInRiver())return {E:{t:LX('🌊 You are in the river — drive onto dry ground to park','🌊 Estás en el río — sal a tierra firme para estacionar'),info:true}};
     return Math.abs(truck.speed)<.35?{E:{t:'Get out of the truck',f:exitTruck}}:null;
   }
   const c={};let base_=null,wA=null,sA=null;
@@ -1214,7 +1214,7 @@ function respawnFall(){const F=FALL,carry=pl.carry;resetPositions();pl.carry=car
   F.ph='drop';F.x=F.truck?truck.x:pl.x;F.z=F.truck?truck.z:pl.z;F.g=Wd.heightAt(F.x,F.z)-(F.truck?.012:0);F.y=F.g+2.2;F.vx=F.vz=0;F.vy=0;F.spin*=.5;
   const c=new THREE.Vector3(F.x+.9,F.g+.55,F.z+.9);EV.cine={t:0,dur:9,posFn:()=>c,tgtFn:()=>new THREE.Vector3(F.x,Math.max(F.y,F.g)+.1,F.z)};Wd.camera.position.copy(c);}
 function exitTruck(){
-  if(truckInRiver()){warnOnce(LX('🌊 Don\'t park in the river! Drive onto the bank first.','🌊 ¡No estaciones en el río! Sube primero a la orilla.'));return;}
+  // rivers can be crossed (slowly) and you can always get out, even in the water: never trap the player
   // step out on the left side
   const lx=Math.sin(truck.yaw)*-.28,lz=Math.cos(truck.yaw)*-.28;let x=truck.x+lx,z=truck.z+lz;if(!walkable(x,z)){x=truck.x-lx;z=truck.z-lz;}
   if(!walkable(x,z)){x=truck.x;z=truck.z;}
@@ -2163,7 +2163,7 @@ function updatePlay(dt,t){
   const [ax,ay]=inputAxes();
   if(pl.inTruck){
     const onRoad=roadDist(truck.x,truck.z)<.08;const E=Wd.infoAt(truck.x,truck.z);const ford=E&&E.rv.d<.07;
-    let vmax=(onRoad?3.0:1.5)*PK.vmax(onRoad);if(ford)vmax=.5;if(WX.block)vmax*=.4;
+    const inRv=truckInRiver(),rvCor=E&&E.rv.d<.35;let vmax=(onRoad?3.0:1.5)*PK.vmax(onRoad);if(ford)vmax=.5;if(inRv)vmax=Math.min(vmax,.3);if(WX.block)vmax*=.4;
     const tgt=PK.freeze()?0:(ay>0?vmax*ay:ay<0?-.7*(-ay):0);if(PK.freeze())truck.speed*=Math.max(0,1-dt*3);
     const acc=(Math.sign(tgt)!==Math.sign(truck.speed)&&Math.abs(truck.speed)>.05)?4.8:(tgt===0?1.7:2.05);
     truck.speed+=clamp(tgt-truck.speed,-acc*dt,acc*dt);
@@ -2176,8 +2176,8 @@ function updatePlay(dt,t){
     if(offEdge(nx,nz,.3)){startFall(true,fx*truck.speed,fz*truck.speed);return;}
     if(Math.hypot(nx-base.x,nz-base.z)<.55&&Math.hypot(nx-base.x,nz-base.z)<Math.hypot(truck.x-base.x,truck.z-base.z))block='🚧 Vehicles stay outside the MEL Field Base. Park and walk in (E).';
     else if(Wd.infoAt(nx,nz).dl<.03)block='Trucks don\'t float — find another way around the lake.';
-    else if(m1>2330&&h1>h0)block='Too steep and loose for the truck up here. Get out <kbd>E</kbd> and hike!';
-    else if(!onRoad&&slope>1.6&&truck.speed>0)block='Too steep! Try a gentler line (or walk).';
+    else if(m1>2330&&h1>h0&&!rvCor)block='Too steep and loose for the truck up here. Get out <kbd>E</kbd> and hike!';
+    else if(!onRoad&&!rvCor&&!(Wd.infoAt(nx,nz).rv.d<.35)&&slope>1.6&&truck.speed>0)block='Too steep! Try a gentler line (or walk).';
     if(block){truck.speed*=-.25;warnOnce(block);}else{truck.x=nx;truck.z=nz;}
     pl.x=truck.x;pl.z=truck.z;pl.yaw=truck.yaw;
   }else if(WX.block&&!PK.is('gabriel')){if(inputAxes().some(v=>Math.abs(v)>.1))warnOnce('❄ Whiteout! It is too dangerous to walk until the squall passes.');
@@ -2191,13 +2191,13 @@ function updatePlay(dt,t){
       pl.moveT=(pl.moveT||0)+dt;const run=(K('ShiftLeft')||K('ShiftRight')||pl.moveT>1.1)&&pl.carry===0;pl.running=run;
       let sp=(pl.carry>0?.3:.46)*(run?1.75:1)*PK.spd();
       const nx=pl.x+dx*sp*dt,nz=pl.z+dz*sp*dt;const h0=Wd.heightAt(pl.x,pl.z),h1=Wd.heightAt(nx,nz);const slope=(h1-h0)/(Math.hypot(nx-pl.x,nz-pl.z)||1e-6);
-      const GB=PK.is('gabriel');if(meters(h0)>2500&&!GB)sp*=.82;
+      const GB=PK.is('gabriel');if(meters(h0)>2500&&!GB)sp*=.82;const rvW=riverAt(pl.x,pl.z),inRvW=rvW.d<rvW.hw+.03,corW=rvW.d<.35;if(inRvW)sp*=.3;
       if(GB){if(slope>.6)sp*=1.35;if(WX.block&&S.t-lastWarn>6){lastWarn=S.t;toast(LX('❄ Gabriel laughs at the squall and keeps going 🧗','❄ Gabriel se ríe de la nevazón y sigue 🧗'),false,1800);}}
       else sp*=clamp(1-Math.max(0,slope-.6)*.22,.3,1);if(slope>2.6&&S.t-lastWarn>3){lastWarn=S.t;toast(GB?LX('🐐 Gabriel flies up the scree like a mountain goat!','🐐 ¡Gabriel sube el acarreo como cabra de montaña!'):'🧗 Scrambling up loose scree…',false,1400);}
       const mx=pl.x+dx*sp*dt,mz=pl.z+dz*sp*dt;
       if(offEdge(mx,mz,.2)){startFall(false,dx*sp,dz*sp);return;}
       if(!walkable(mx,mz))warnOnce('Too deep to wade — go around.');
-      else if(slope>(PK.is('gabriel')?16:9))warnOnce('Sheer cliff! Find another route.');
+      else if(!corW&&slope>(PK.is('gabriel')?16:9))warnOnce('Sheer cliff! Find another route.');
       else{const ps=Math.floor(pl.walk/Math.PI);pl.x=mx;pl.z=mz;pl.walk+=dt*sp*38;
         if(Math.floor(pl.walk/Math.PI)!==ps&&!PK.is('estefania')){const E2=Wd.infoAt(pl.x,pl.z),al=meters(Wd.heightAt(pl.x,pl.z));AU.sfx.step(E2.rv.d<.07||E2.dl<.1?'water':al>2560?'snow':E2.dv<5.5?'ash':'gravel');}}
       pl.yaw=angLerp(pl.yaw,Math.atan2(-dz,dx),Math.min(1,dt*10));
