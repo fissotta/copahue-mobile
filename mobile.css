@@ -120,3 +120,17 @@ body.mobile.hudm::before,body.mobile.hudm #xa-bar{content:'';position:fixed;z-in
 body.mobile.hudm::before{left:calc(var(--sl) + 46px);top:calc(var(--st) + 46px);width:142px;height:calc(100vh - var(--st) - 46px - 142px - var(--sb))}
 body.mobile.hudm #xa-bar{position:fixed;padding:6px 8px;margin:-6px 0 0 -8px;pointer-events:auto;z-index:41;animation:none}
 @keyframes mbpop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+
+/* minigame panels: big controls float on the LEFT of the 3D view, the right panel only has the readout + bars */
+body.mb-fpm #g-stat,body.mb-fpm #g-prompt{display:none!important}
+body > .mb-float{position:fixed!important;left:calc(var(--sl) + 190px);bottom:calc(var(--sb) + 26px);z-index:60;min-width:170px;min-height:68px;font-size:22px!important;padding:8px 18px;touch-action:none;user-select:none;-webkit-user-select:none}
+.mb-pnl svg,.mb-pnl .note{display:none!important}
+.mb-pnl .g-row:empty{display:none}
+.mb-pnl .g-row{margin:4px 0;gap:6px}
+.g-ov.fp3d .mb-prog .vacbar{font-size:15px}
+.g-ov.fp3d .mb-prog .vacbar .vb{height:16px}
+/* manometer: wide coloured scale (grey = too weak, green = good 0.35–0.70, yellow/red = tearing risk) with a needle */
+.g-ov.fp3d .mb-prog .vacbar{display:flex!important;align-items:center;gap:8px;flex-wrap:nowrap}
+.g-ov.fp3d .mb-prog .vacbar .vb{position:relative;flex:1;min-width:90px;height:18px;border:2px solid #1d1a2b;border-radius:9px;background:linear-gradient(90deg,#d8d8d8 0 35%,#8ac926 35% 70%,#ffd23f 70% 84%,#ff4f3a 84% 100%)}
+.g-ov.fp3d .mb-prog .vacbar .vb i{position:absolute;top:-5px;left:0;width:6px;height:24px;margin-left:-3px;background:#1d1a2b;border-radius:3px;box-shadow:0 0 0 2px #fff}
+.g-ov.fp3d .mb-prog .vacbar span{white-space:nowrap;font-weight:700}

@@ -2790,6 +2790,8 @@ function showHelp(){if(modal&&modal.help){closeModal();return;}
 
 // ------------------------------------------------------------ PROBE mini-game
 // mobile: move progress meters to a sticky strip at the top of the side panel
+function mobFloat(id){if(!window.__MOBILE)return;const e=document.getElementById(id);if(!e)return;const g=$('#g-mb .g-grid');if(g)g.classList.add('mb-pnl');document.body.appendChild(e);e.classList.add('mb-float');}
+function mobUnfloat(id){const e=document.getElementById(id);if(e&&e.parentNode===document.body)e.remove();}
 function mobTop(sel){if(!window.__MOBILE)return;const mb=$('#g-mb');if(!mb)return;const w=document.createElement('div');w.className='mb-prog';[...mb.querySelectorAll(sel)].forEach(e=>w.appendChild(e));mb.insertBefore(w,mb.firstChild);}
 function openProbe(m){
   const real=m.smp?m.smp.v:{};const cur={};PROBE.forEach(p=>cur[p[0]]=p[0]==='pH'?7:p[0]==='Temp.[ºC]'?8:0);
@@ -2810,7 +2812,7 @@ function openProbe(m){
     <div style="margin-top:8px;font-weight:700;font-size:12.5px">Stabilisation</div><div class="meter"><i id="pb-m" style="width:0%"></i><span id="pb-ms">0%</span></div>
     <p class="note">${m.smp?`Readings are the lab's real values for this site (${m.smp.name}, ${m.smp.date||m.smp.year}).`:'No probe record exists for this site.'}</p>
    </div></div>`,
-   init(){holdBtn('pb-lower','Space');if($('#pb-rec'))$('#pb-rec').onclick=record;mobTop('#g-mb .meter');},
+   init(){holdBtn('pb-lower','Space');if($('#pb-rec'))$('#pb-rec').onclick=record;mobFloat('pb-lower');},onclose(){mobUnfloat('pb-lower');},
    key(c){if(c==='KeyE'||c==='Enter')record();},
    tick(dt){if(done)return;tt+=dt;
      const d0=depth;if(K('Space'))depth+=32*dt;else depth-=11*dt;depth=clamp(depth,0,72);if(d0<8&&depth>=8)AU.sfx.splash();
@@ -2872,11 +2874,11 @@ function openFilter(m,where){
     <div class="kv" style="margin-bottom:6px"><span>Stage</span><b id="f-stg"></b><span>Filtered</span><b id="f-vol"></b><span>Membrane clogging</span><b id="f-clg"></b><span>Membranes used</span><b id="f-mb"></b><span>Ruptures</span><b id="f-rp">0</b></div>
     <div class="fp3donly vacbar"><b>VACUUM</b><div class="vb"><i id="f-vbn"></i></div><span id="f-vbt">−0.00 bar</span></div>
     <div class="meter"><i id="f-vm" style="width:0%;background:#3a86ff"></i><span id="f-vms">0 / 20 L</span></div>
-    <div class="g-row"><button class="g-btn y" id="f-pump">⛽ HOLD TO PUMP (SPACE)</button><button class="g-btn" id="f-swap">⟳ SWAP MEMBRANE (R)</button><button class="g-btn" id="f-empty">⤓ EMPTY FLASK (F)</button></div>
+    <div class="g-row"><button class="g-btn y" id="f-pump">${window.__MOBILE?LX('⛽ PUMP','⛽ BOMBEAR'):'⛽ HOLD TO PUMP (SPACE)'}</button><button class="g-btn" id="f-swap">${window.__MOBILE?LX('⟳ SWAP MEMBRANE','⟳ CAMBIAR MEMBRANA'):'⟳ SWAP MEMBRANE (R)'}</button><button class="g-btn" id="f-empty">${window.__MOBILE?LX('⤓ EMPTY FLASK','⤓ VACIAR MATRAZ'):'⤓ EMPTY FLASK (F)'}</button></div>
     <div class="g-row" id="f-next"></div>
     <p class="note"><b>Differential filtration:</b> the whole 20 L goes through a 0.45 µm membrane first; it traps cells attached to particles and bigger organisms. The filtrate is kept and pushed through 0.22 µm to catch the smaller, free-living bacteria and archaea. Keep vacuum between −0.35 and −0.70 bar: too weak and nothing flows, too strong and the membrane tears.</p>
    </div></div>`,
-   init(){mobTop('#g-mb .vacbar,#g-mb .meter');holdBtn('f-pump','Space');$('#f-swap').onclick=swap;$('#f-empty').onclick=empty;gaugeArcs();},
+   onclose(){mobUnfloat('f-pump');},init(){mobTop('#g-mb .vacbar,#g-mb .meter');holdBtn('f-pump','Space');mobFloat('f-pump');$('#f-swap').onclick=swap;$('#f-empty').onclick=empty;gaugeArcs();},
    key(c){if(c==='KeyR')swap();if(c==='KeyF')empty();if((c==='KeyE'||c==='Enter')&&fin)store();},
    tick(dt){if(fin){AUX.pump=0;AUX.gurgle=0;if(window.FPG&&FPG.filt){FPG.filt.fin=true;FPG.filt.q=0;FPG.filt.pumping=false;}return;}tt+=dt;const S2=ST[si];
      AUX.pump=(K('Space')&&!swapNeeded)?(where==='truck'?1:2):0;
@@ -2885,7 +2887,7 @@ function openFilter(m,where){
      if(vac>.84&&!swapNeeded){over+=dt;if(over>.25){rupt++;S.score=Math.max(0,S.score-15);swapNeeded=true;vac=0;AU.sfx.tear();toast('💥 RIIIP! Too much vacuum — the membrane tore. Swap it (R) and pump gently.',true,3000);vol=Math.max(0,vol-1);}}else over=0;
      if(PK.is('simon')&&!swapNeeded&&K('Space')&&vol>1&&Math.random()<dt*.09){rupt++;S.score=Math.max(0,S.score-15);swapNeeded=true;vac=0;vol=Math.max(0,vol-1);AU.sfx.tear();toast(LX((a=>a[Math.floor(Math.random()*a.length)])(['💥 CRASH! Simón elbowed the filter holder and cracked the glass funnel. New membrane (R)!','💥 CRACK! Simón dropped the forceps right through the membrane. Swap it (R)!','💥 CLINK! Simón knocked the Kitasato flask over. Clean up and put a new membrane (R).']),(a=>a[Math.floor(Math.random()*a.length)])(['💥 ¡CRASH! Simón le pegó con el codo al portafiltro y quebró el embudo de vidrio. ¡Membrana nueva (R)!','💥 ¡CRACK! A Simón se le cayó la pinza justo encima de la membrana. ¡Cámbiala (R)!','💥 ¡CLINK! Simón botó el matraz Kitasato. Limpia y pon una membrana nueva (R).'])),true,3800);}
      let q=0;
-     if(!swapNeeded&&flask<FL){q=Math.max(0,vac-.12)*3.4*Math.pow(1-clog,1.2)*((PK.is('tito')||PK.is('priscilla'))?4:1);q=Math.min(q,(VOL-vol)/Math.max(dt,1e-3)+.01,(FL-flask)/Math.max(dt,1e-3));}
+     if(!swapNeeded&&flask<FL){q=Math.max(0,vac-.12)*(window.__MOBILE?5.1:3.4)*Math.pow(1-clog,1.2)*((PK.is('tito')||PK.is('priscilla'))?4:1);q=Math.min(q,(VOL-vol)/Math.max(dt,1e-3)+.01,(FL-flask)/Math.max(dt,1e-3));}
      AUX.gurgle=q>.05;vol+=q*dt;flask+=q*dt;if(VOL-vol<.03&&q>0)vol=VOL;clog=clamp(clog+S2.clogL*q*dt,0,1);
      if(swapNeeded)warn='TORN MEMBRANE — SWAP (R)';else if(clog>.92)warn='MEMBRANE CLOGGED — SWAP (R)';else if(flask>=FL-.01)warn='FLASK FULL — EMPTY IT (F)';else if(vac>.7)warn='TOO MUCH VACUUM!';else if(clog>.6)warn='flow dropping — swap soon (R)';else if(vac<.35&&K('Space'))warn='building vacuum…';
      if(vol>=VOL-1e-6&&!swapNeeded){ // stage complete

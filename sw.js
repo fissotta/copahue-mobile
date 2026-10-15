@@ -1,6 +1,6 @@
 /* Copahue Mobile service worker: app shell precache, cache-first for static files, network-first for the HTML.
    Music is NOT precached: it is cached on first play (Range requests are passed through). */
-const V='cfc-mobile-v2';
+const V='cfc-mobile-v3';
 const SHELL=['./','index.html','mobile.css','manifest.webmanifest','js/world.js','js/game.js','js/fpgear.js','js/fpworld.js','js/hudmenu.js','js/mobile.js','js/radio.js','libs/three.min.js','libs/addons.js','data/data.js','data/sky/sky_stars.webp','icons/icon-192.png','icons/icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()));});
