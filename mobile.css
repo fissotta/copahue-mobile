@@ -104,3 +104,19 @@ body.mobile #g-tT,body.mobile #xa-turbo,body.mobile #xa-pb{display:none!importan
 /* journal / badges: compact row at the top, next to the title chip (was covering the sound / language / map buttons) */
 body.mobile #xa-bar{left:calc(190px + var(--sl))!important;top:calc(6px + var(--st))!important;max-width:none!important;flex-wrap:nowrap;gap:5px}
 body.mobile #xa-bar .g-btn{font-size:13px!important;min-height:36px;padding:3px 8px}
+
+/* ---- menu moved toward the centre (camera cut-out / notch) + map-style backdrop so an open menu is obvious ---- */
+body.mobile #g-top{left:calc(var(--sl) + 40px)!important}
+body.mobile #g-snd,body.mobile #g-side{left:calc(var(--sl) + 56px)!important}
+body.mobile #g-joy{left:calc(var(--sl) + 46px)!important}
+body.mobile #xa-bar{left:calc(var(--sl) + 240px)!important;top:calc(var(--st) + 14px)!important}
+body.mobile.hudm::before,body.mobile.hudm #xa-bar{content:'';position:fixed;z-index:40;pointer-events:none;
+  background:
+    radial-gradient(circle at 18% 22%,rgba(160,120,60,.16) 0 2px,transparent 3px) 0 0/22px 22px,
+    repeating-linear-gradient(115deg,rgba(150,110,55,.10) 0 2px,transparent 2px 14px),
+    #f4e4b4;
+  border:3px solid #1d1a2b;border-radius:12px;box-shadow:4px 4px 0 #1d1a2b,inset 0 0 0 4px #f4e4b4,inset 0 0 0 6px rgba(29,26,43,.55);
+  animation:mbpop .16s ease-out}
+body.mobile.hudm::before{left:calc(var(--sl) + 46px);top:calc(var(--st) + 46px);width:142px;height:calc(100vh - var(--st) - 46px - 142px - var(--sb))}
+body.mobile.hudm #xa-bar{position:fixed;padding:6px 8px;margin:-6px 0 0 -8px;pointer-events:auto;z-index:41;animation:none}
+@keyframes mbpop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
