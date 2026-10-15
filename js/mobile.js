@@ -115,7 +115,8 @@ const AC=[];
 function scaleOne(key,obj,on,k){let r=AC.find(x=>x.key===key);if(r&&r.obj!==obj){r=null;AC.splice(AC.findIndex(x=>x.key===key),1);}
   if(!obj)return;if(!r){r={key,obj,base:obj.scale.clone(),on:false};AC.push(r);}
   if(on){r.obj.scale.copy(r.base).multiplyScalar(k);r.on=true;}else if(r.on){r.obj.scale.copy(r.base);r.on=false;}}
-function actors(g){const on=g.cam.map,k=clamp(MOB.H*.42,1.5,26);scaleOne('truck',g.truck.g,on,k);scaleOne('pl',g.pl.g,on&&!g.pl.inTruck,k);}
+function actors(g){const on=g.cam.map,k=clamp(MOB.H*.24,1.4,16);scaleOne('truck',g.truck.g,on,k);scaleOne('pl',g.pl.g,on&&!g.pl.inTruck,k);
+  (g.CREW||[]).forEach((c,i)=>scaleOne('crew'+i,c.g,on,k));}   // camera + sound operators grow with you (otherwise they look like ants next to a big truck)
 
 /* ---------- get in / out of the truck button (always available, not only the contextual E) ---------- */
 let car=null;

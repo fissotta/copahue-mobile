@@ -3382,5 +3382,5 @@ const _gt=GAME.tick;GAME.tick=function(dt,t){
 
 
 // ---- MOBILE bridge (mobile.js reads/drives the game through this; no effect on gameplay)
-window.__CFC={get cam(){return cam;},get pl(){return pl;},get S(){return S;},get mode(){return mode;},get modal(){return modal;},get M(){return M;},get base(){return base;},get truck(){return truck;},get EV(){return EV;},get ctx(){return ctx;},st,act,closeModal,nextTarget,VOL,openProbe,openFilter,openShip,enterTruck,exitTruck,toast,warnOnce};
+window.__CFC={get cam(){return cam;},get pl(){return pl;},get S(){return S;},get mode(){return mode;},get modal(){return modal;},get M(){return M;},get base(){return base;},get truck(){return truck;},get EV(){return EV;},get ctx(){return ctx;},st,act,closeModal,nextTarget,VOL,openProbe,openFilter,openShip,enterTruck,exitTruck,toast,warnOnce,CREW};
 })();
