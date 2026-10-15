@@ -51,7 +51,8 @@ function roadDist(x,z){let b=1e9;for(let i=0;i<roadPts.length;i++){const p=roadP
 function nearestRoad(x,z){let b=1e9,bi=0;roadPts.forEach((p,i)=>{const d=(p[0]-x)**2+(p[1]-z)**2;if(d<b){b=d;bi=i;}});return roadPts[bi];}
 const fmtT=s=>{s=Math.floor(s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
 function fmtV(v,d){if(v===undefined||v===null||isNaN(v))return '—';return Math.abs(v)>=10000?(v/1000).toFixed(1)+'k':v.toFixed(d);}
-let toastT=null;function toast(msg,warn,ms=3200){const el=$('#g-toast');el.innerHTML=msg;el.classList.toggle('warn',!!warn);el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms);}
+let toastT=null;const KH=t=>window.__MOBILE&&typeof t==='string'?t.replace(/\s*\((?:SPACE|R|F|E)\)/g,''):t;
+function toast(msg,warn,ms=3200){const el=$('#g-toast');el.innerHTML=KH(msg);el.classList.toggle('warn',!!warn);el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms);}
 let lastWarn=0;function warnOnce(msg){if(S.t-lastWarn>2.5){lastWarn=S.t;toast(msg,true,2200);beep(180,.12);}}
 function stamp(big,small){AU.sfx.stamp();const el=$('#g-stamp');el.innerHTML=big+(small?'<small>'+small+'</small>':'');el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1700);}
 // ------------------------------------------------------------ AUDIO (all procedural WebAudio: no files)
@@ -2714,7 +2715,7 @@ function tick(dt,t){
 }
 
 // ------------------------------------------------------------ modal framework
-function openModal(o){modal=o;const ov=$('#g-ov');ov.classList.add('open');ov.classList.toggle('fp3d',!!(o.fp3d&&window.FPG&&FPG.can3d()));$('#g-modal').style.setProperty('--c',o.col||'#ffd23f');$('#g-mh').textContent=o.title;$('#g-mm').innerHTML=o.meta||'';$('#g-mb').innerHTML=o.html||'';$('#g-mx').style.display=o.close===false?'none':'';$('#g-mb').scrollTop=0;$('#g-modal').scrollTop=0;if(o.init)o.init();}
+function openModal(o){modal=o;const ov=$('#g-ov');ov.classList.add('open');ov.classList.toggle('fp3d',!!(o.fp3d&&window.FPG&&FPG.can3d()));$('#g-modal').style.setProperty('--c',o.col||'#ffd23f');$('#g-mh').textContent=o.title;$('#g-mm').innerHTML=o.meta||'';$('#g-mb').innerHTML=KH(o.html||'');$('#g-mx').style.display=o.close===false?'none':'';$('#g-mb').scrollTop=0;$('#g-modal').scrollTop=0;if(o.init)o.init();}
 function closeModal(){const o=modal;modal=null;relock();AUX.pump=0;AUX.beater=0;AUX.gurgle=0;$('#g-ov').classList.remove('open','fp3d');for(const k in keys)keys[k]=false;if(o&&o.onclose)o.onclose();}
 function enterPrimary(scope){const roots=[...document.querySelectorAll(scope)].filter(r=>r.offsetParent||getComputedStyle(r).position==='fixed');
   for(const r of roots){const bs=[...r.querySelectorAll('button.g-btn')].filter(b=>!b.disabled&&b.offsetParent!==null&&!/pump|lower|swap|empty|mx$/.test(b.id||''));if(!bs.length)continue;
@@ -2788,6 +2789,8 @@ function showHelp(){if(modal&&modal.help){closeModal();return;}
  <li>${LX('Back at the <b>MEL Field Base</b> (Caviahue): extract DNA, build libraries and sequence on the Illumina.','De vuelta en la <b>Base MEL</b> (Caviahue): extrae ADN, prepara librerías y secuencia en el Illumina.')}</li></ol></div>`});}
 
 // ------------------------------------------------------------ PROBE mini-game
+// mobile: move progress meters to a sticky strip at the top of the side panel
+function mobTop(sel){if(!window.__MOBILE)return;const mb=$('#g-mb');if(!mb)return;const w=document.createElement('div');w.className='mb-prog';[...mb.querySelectorAll(sel)].forEach(e=>w.appendChild(e));mb.insertBefore(w,mb.firstChild);}
 function openProbe(m){
   const real=m.smp?m.smp.v:{};const cur={};PROBE.forEach(p=>cur[p[0]]=p[0]==='pH'?7:p[0]==='Temp.[ºC]'?8:0);
   let depth=0,stab=0,sed=0,tt=0,done=false;const air=()=>depth<8;
@@ -2800,14 +2803,14 @@ function openProbe(m){
      <line id="pb-cab" x1="110" y1="0" x2="110" y2="10" stroke="#1d1a2b" stroke-width="3"/>
      <g id="pb-probe"><rect x="98" y="-60" width="24" height="60" rx="6" fill="#2b2b2b" stroke="#1d1a2b" stroke-width="3"/><rect x="100" y="-14" width="20" height="10" fill="#ffd23f"/><circle cx="110" cy="2" r="5" fill="#3a86ff" stroke="#1d1a2b" stroke-width="2"/></g>
      <text x="8" y="232" font-family="Bangers" font-size="16" fill="#fff">SEDIMENT</text><text id="pb-dt" x="212" y="24" text-anchor="end" font-family="Bangers" font-size="18" fill="#1d1a2b">0 cm</text></svg>
-    <div class="g-row"><button class="g-btn y" id="pb-lower">⬇ HOLD TO LOWER (SPACE)</button><button class="g-btn t" id="pb-rec" disabled>● RECORD (E)</button></div>
+    <div class="g-row"><button class="g-btn y" id="pb-lower">${window.__MOBILE?LX('⬇ SONDE','⬇ SONDA'):'⬇ HOLD TO LOWER (SPACE)'}</button>${window.__MOBILE?'':'<button class="g-btn t" id="pb-rec" disabled>● RECORD (E)</button>'}</div>
     <div class="note">Keep the sensor tip in the green band (15–55 cm): fully submerged but off the sediment. Stirring up the bottom ruins the turbidity and resets stabilisation.</div>
    </div><div>
     <div class="lcd"><div class="hdr"><span>SONDE · ${m.c}</span><span id="pb-st">IN AIR</span></div><div id="pb-lcd"></div></div>
     <div style="margin-top:8px;font-weight:700;font-size:12.5px">Stabilisation</div><div class="meter"><i id="pb-m" style="width:0%"></i><span id="pb-ms">0%</span></div>
     <p class="note">${m.smp?`Readings are the lab's real values for this site (${m.smp.name}, ${m.smp.date||m.smp.year}).`:'No probe record exists for this site.'}</p>
    </div></div>`,
-   init(){holdBtn('pb-lower','Space');$('#pb-rec').onclick=record;},
+   init(){holdBtn('pb-lower','Space');if($('#pb-rec'))$('#pb-rec').onclick=record;mobTop('#g-mb .meter');},
    key(c){if(c==='KeyE'||c==='Enter')record();},
    tick(dt){if(done)return;tt+=dt;
      const d0=depth;if(K('Space'))depth+=32*dt;else depth-=11*dt;depth=clamp(depth,0,72);if(d0<8&&depth>=8)AU.sfx.splash();
@@ -2824,7 +2827,7 @@ function openProbe(m){
      $('#pb-lcd').innerHTML=PROBE.map(([key,n,u,d])=>`<div class="ln"><span>${n}</span><span>${real[key]===undefined&&!air()?'--':fmtV(cur[key],d)} ${u}</span></div>`).join('');
      $('#pb-m').style.width=stab+'%';$('#pb-ms').textContent=stab>=100?'STABLE ✔':Math.round(stab)+'%';$('#pb-m').style.background=stab>=100?'#8ac926':'#2ec4b6';
      $('#pb-st').textContent=air()?'IN AIR':sed>0?'!! TURBID':inBand?(stab>=100?'STABLE':'SETTLING…'):depth>55?'TOO DEEP':'TOO SHALLOW';
-     $('#pb-rec').disabled=stab<100;
+     if($('#pb-rec'))$('#pb-rec').disabled=stab<100;else if(stab>=100)record();
      if(window.FPG){const R3=[['pH','pH',2],['Temp.[ºC]','T°C',1],['EC[µS/cm]','EC',0],['ORP[mV]','ORP',0],['D.O.[%]','OD%',0]].filter(r=>real[r[0]]!==undefined||air()).slice(0,5);
        FPG.probe={depth,stab,sed,air:air(),st:$('#pb-st').textContent,rows:R3.map(r=>[r[1],real[r[0]]===undefined&&!air()?'--':fmtV(cur[r[0]],r[2])])};}}
   });
@@ -2873,7 +2876,7 @@ function openFilter(m,where){
     <div class="g-row" id="f-next"></div>
     <p class="note"><b>Differential filtration:</b> the whole 20 L goes through a 0.45 µm membrane first; it traps cells attached to particles and bigger organisms. The filtrate is kept and pushed through 0.22 µm to catch the smaller, free-living bacteria and archaea. Keep vacuum between −0.35 and −0.70 bar: too weak and nothing flows, too strong and the membrane tears.</p>
    </div></div>`,
-   init(){holdBtn('f-pump','Space');$('#f-swap').onclick=swap;$('#f-empty').onclick=empty;gaugeArcs();},
+   init(){mobTop('#g-mb .vacbar,#g-mb .meter');holdBtn('f-pump','Space');$('#f-swap').onclick=swap;$('#f-empty').onclick=empty;gaugeArcs();},
    key(c){if(c==='KeyR')swap();if(c==='KeyF')empty();if((c==='KeyE'||c==='Enter')&&fin)store();},
    tick(dt){if(fin){AUX.pump=0;AUX.gurgle=0;if(window.FPG&&FPG.filt){FPG.filt.fin=true;FPG.filt.q=0;FPG.filt.pumping=false;}return;}tt+=dt;const S2=ST[si];
      AUX.pump=(K('Space')&&!swapNeeded)?(where==='truck'?1:2):0;
@@ -2896,7 +2899,7 @@ function openFilter(m,where){
      $('#f-pore').textContent=ST[si].pore+' membrane';
      const fh=110*flask/FL;$('#f-flk').setAttribute('y',230-fh);$('#f-flk').setAttribute('height',fh);$('#f-flt').textContent=`receiver ${flask.toFixed(1)}/10 L`;
      const a=(-120+vac*240)*Math.PI/180;$('#f-nd').setAttribute('x2',252+Math.sin(a)*28);$('#f-nd').setAttribute('y2',190-Math.cos(a)*28);$('#f-gt').textContent='−'+vac.toFixed(2)+' bar';
-     $('#f-warn').textContent=warn;{const n=$('#f-vbn');if(n){n.style.left=(vac*100)+'%';const t=$('#f-vbt');t.textContent='−'+vac.toFixed(2)+' bar'+(warn?' · '+warn:'');t.style.color=vac>.7||swapNeeded?'#ff4f3a':vac>=.35?'#2b8a1e':'#1d1a2b';}}
+     warn=KH(warn);$('#f-warn').textContent=warn;{const n=$('#f-vbn');if(n){n.style.left=(vac*100)+'%';const t=$('#f-vbt');t.textContent='−'+vac.toFixed(2)+' bar'+(warn?' · '+warn:'');t.style.color=vac>.7||swapNeeded?'#ff4f3a':vac>=.35?'#2b8a1e':'#1d1a2b';}}
      $('#f-stg').textContent=`${ST[si].pore} · ${ST[si].frac}`;$('#f-vol').textContent=vol.toFixed(1)+' / '+VOL+' L';$('#f-clg').textContent=Math.round(clog*100)+'%';
      $('#f-mb').textContent=`${memb[0]} × 0.45 · ${memb[1]} × 0.22`;$('#f-rp').textContent=rupt;
      if(window.FPG)FPG.filt={si,vac,vol,flask,clog,swapNeeded,q,memb:memb.slice(),fin,where,warn,pumping:K('Space')&&!swapNeeded,VOL,FL,ph:m.smp&&m.smp.v?m.smp.v.pH:null};
@@ -2965,7 +2968,7 @@ async function mountBoard(el,getMine){
   return ()=>{};
 }
 async function submitRun(run,name){
-  const rec=Object.assign({},run,{name:String(name||'Anonymous').trim().slice(0,24)||'Anonymous'});
+  const rec=Object.assign({},run,{name:(String(name||'Anonymous').trim().replace(/\s*📱$/,'').slice(0,21)||'Anonymous')+(window.__MOBILE?' 📱':'')});
   ['score','sites','total','time','filtQ','probeQ','seqQ','rupt','ch'].forEach(k=>rec[k]=Math.round(num(rec[k],0,k==='score'?1e6:k==='time'?1e7:999)));
   const local=id=>{let loc=[];try{loc=JSON.parse(localStorage.getItem('cfc_local_board')||'[]');}catch(e){}loc.push({id,d:rec});try{localStorage.setItem('cfc_local_board',JSON.stringify(loc.slice(-50)));}catch(e){}return id;};
   const db=await getDB();

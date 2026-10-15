@@ -68,7 +68,7 @@ function bindTouch(){
   cv.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,[e.clientX,e.clientY]);
     if(P.size>=2&&d0>0){e.stopImmediatePropagation();const [a,b]=[...P.values()];const r=d0/Math.hypot(a[0]-b[0],a[1]-b[1]),c=cam();
       if(c.map)MOB.zoomMul=clamp(z0*r,.25,3);
-      else if(c.fp){if(r<.72){c.fp=false;c.zoom=1;d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=1;}}   // spread fingers in first person -> step back to third person
+      else if(c.fp){if(r<.72&&!MOB.zone&&!G().modal){c.fp=false;c.zoom=1;d0=Math.hypot(a[0]-b[0],a[1]-b[1]);z0=1;}}   // spread fingers in first person -> step back to third person
       else{const z=z0*r;if(z<.5&&r>1.25){c.fp=true;}else c.zoom=clamp(z,.5,4);}}              // pinch in third person = dolly; pinch hard in -> back to first person
     if(tap&&Math.hypot(e.clientX-tap.x,e.clientY-tap.y)>14)tap=null;},true);
   const up=e=>{P.delete(e.pointerId);if(P.size<2)d0=0;
@@ -107,6 +107,9 @@ function ctxLoop(){
   if(fpModal&&!fpModalPrev&&g.cam.map)goFP();
   if(!fpModal&&fpModalPrev&&!zone&&!g.cam.map&&!g.pl.inTruck)goMap();
   fpModalPrev=fpModal;
+  // sampling / probe / filtration are 3D first person only: never third person inside a site zone or with those minigames open
+  if((zone||fpModal)&&!g.cam.map&&!g.pl.inTruck&&!g.cam.fp)goFP();
+  if(fpModal){const ov=D.getElementById('g-ov');if(ov&&!ov.classList.contains('fp3d')&&window.FPG&&FPG.can3d())ov.classList.add('fp3d');}
   hud(g);actors(g);carBtn(g);
 }
 
