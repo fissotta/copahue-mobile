@@ -51,7 +51,7 @@ function roadDist(x,z){let b=1e9;for(let i=0;i<roadPts.length;i++){const p=roadP
 function nearestRoad(x,z){let b=1e9,bi=0;roadPts.forEach((p,i)=>{const d=(p[0]-x)**2+(p[1]-z)**2;if(d<b){b=d;bi=i;}});return roadPts[bi];}
 const fmtT=s=>{s=Math.floor(s);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
 function fmtV(v,d){if(v===undefined||v===null||isNaN(v))return '—';return Math.abs(v)>=10000?(v/1000).toFixed(1)+'k':v.toFixed(d);}
-let toastT=null;const KH=t=>window.__MOBILE&&typeof t==='string'?t.replace(/\s*\((?:SPACE|R|F|E)\)/g,''):t;
+let toastT=null;const KH=t=>{if(!(window.__MOBILE&&typeof t==='string'))return t;const es=typeof LANG!=='undefined'&&LANG==='es',M={E:es?'ACCIÓN':'ACTION',Q:es?'SONDA':'PROBE',SPACE:es?'BOTÓN':'BUTTON',ESPACIO:'BOTÓN',R:es?'CAMBIAR':'SWAP',F:es?'VACIAR':'EMPTY'};return t.replace(/\s*\((?:SPACE|ESPACIO|R|F|E)\)/g,'').replace(/<kbd>(E|Q|SPACE|ESPACIO|R|F)<\/kbd>/g,(m,k)=>'<b>'+M[k]+'</b>');};
 function toast(msg,warn,ms=3200){const el=$('#g-toast');el.innerHTML=KH(msg);el.classList.toggle('warn',!!warn);el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),ms);}
 let lastWarn=0;function warnOnce(msg){if(S.t-lastWarn>2.5){lastWarn=S.t;toast(msg,true,2200);beep(180,.12);}}
 function stamp(big,small){AU.sfx.stamp();const el=$('#g-stamp');el.innerHTML=big+(small?'<small>'+small+'</small>':'');el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1700);}
@@ -2329,7 +2329,7 @@ function updateHUD(){compassHUD();
     $('#g-cmpt').innerHTML=T==='base'?`MEL Field Base · ${d.toFixed(1)} km`:`${S.target?'':'Nearest: '}<b>${T.c.replace('_','–')}</b> ${T.en} · ${d.toFixed(1)} km${T.hike?' · 🥾 hike':''}`;}
   // prompt
   const pr=$('#g-prompt');
-  if(ctx&&mode==='play'&&!modal){let h='';if(ctx.E)h+=ctx.E.info?`<span style="opacity:.75">${ctx.E.t}</span>`:`<kbd>E</kbd> ${ctx.E.t}`;if(ctx.Q)h+=`${h?'<br>':''}<kbd>Q</kbd> ${ctx.Q.t}`;if(ctx.hint)h+=`<br><span style="opacity:.7;font-size:.85em"><span>↔ ${LX('Step closer for:','Acércate para:')}</span> <span>${ctx.hint}</span></span>`;
+  if(ctx&&mode==='play'&&!modal){let h='';if(ctx.E)h+=ctx.E.info?`<span style="opacity:.75">${ctx.E.t}</span>`:`${window.__MOBILE?'':'<kbd>E</kbd> '}${KH(ctx.E.t)}`;if(ctx.Q)h+=`${h?'<br>':''}${window.__MOBILE?'':'<kbd>Q</kbd> '}${KH(ctx.Q.t)}`;if(ctx.hint)h+=`<br><span style="opacity:.7;font-size:.85em"><span>↔ ${LX('Step closer for:','Acércate para:')}</span> <span>${ctx.hint}</span></span>`;
     if(ctx.E&&ctx.E.hold&&pl.fill>0)h+=`<div class="bar"><i style="width:${(pl.fill*100).toFixed(0)}%"></i></div>`;
     if(pr._h!==h){pr.innerHTML=h;pr._h=h;}pr.style.display='block';}else pr.style.display='none';
   // status

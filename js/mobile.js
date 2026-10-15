@@ -110,6 +110,8 @@ function ctxLoop(){
   // sampling / probe / filtration are 3D first person only: never third person inside a site zone or with those minigames open
   if((zone||fpModal)&&!g.cam.map&&!g.pl.inTruck&&!g.cam.fp)goFP();
   if(fpModal){const ov=D.getElementById('g-ov');if(ov&&!ov.classList.contains('fp3d')&&window.FPG&&FPG.can3d())ov.classList.add('fp3d');}
+  {const te=D.getElementById('g-tE'),tq=D.getElementById('g-tQ'),tm=D.getElementById('g-tM');   // buttons say what they do, no keyboard letters
+   const set=(el,t)=>{if(el&&el.textContent!==t)el.textContent=t;};set(te,tx('ACTION','ACCIÓN'));set(tq,tx('PROBE','SONDA'));set(tm,tx('MAP','MAPA'));}
   hud(g);actors(g);carBtn(g);
 }
 
