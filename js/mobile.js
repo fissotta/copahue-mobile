@@ -122,14 +122,15 @@ function actors(g){const on=g.cam.map,k=clamp(MOB.H*.24,1.4,16);scaleOne('truck'
   (g.CREW||[]).forEach((c,i)=>scaleOne('crew'+i,c.g,on,k));}   // camera + sound operators grow with you (otherwise they look like ants next to a big truck)
 
 /* ---------- get in / out of the truck button (always available, not only the contextual E) ---------- */
-let car=null;
+let car=null;const CAR_NEAR=3;   // km: show GET IN when the truck is within this distance
+
 function carBtn(g){
   if(!car){const tb=D.querySelector('#g-tbtn');if(!tb)return;car=D.createElement('button');car.className='g-btn';car.id='mb-car';tb.insertBefore(car,tb.firstChild);
     car.addEventListener('pointerdown',e=>{e.preventDefault();const g=G();
       if(g.pl.inTruck){if(Math.abs(g.truck.speed)>.45){g.toast(tx('Stop the truck first','Frena primero la camioneta'),true,1600);}else g.exitTruck();}
-      else{const d=Math.hypot(g.pl.x-g.truck.x,g.pl.z-g.truck.z);if(d<1.2)g.enterTruck();else g.toast(tx('Walk closer to the truck ('+d.toFixed(1)+' km)','Acércate a la camioneta ('+d.toFixed(1)+' km)'),true,1800);}});}
+      else g.enterTruck();});}   // no need to stand next to it: the button only shows when the truck is nearby
   const t=g.pl.inTruck?'🚶 '+tx('GET OUT','BAJAR'):'🛻 '+tx('GET IN','SUBIR');if(car.textContent!==t)car.textContent=t;
-  car.style.display=(g.mode==='play'&&!g.modal)?'':'none';
+  const dT=Math.hypot(g.pl.x-g.truck.x,g.pl.z-g.truck.z);car.style.display=(g.mode==='play'&&!g.modal&&(g.pl.inTruck||dT<CAR_NEAR))?'':'none';
 }
 
 /* ---------- map HUD: target chip with arrow + distance ---------- */

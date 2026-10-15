@@ -98,3 +98,9 @@ body.mb-map .glbl.tg small,body.mb-map .glbl.base small{font-size:9px!important}
 .mb-prog .vacbar{display:flex!important;margin:0 0 3px}
 /* keep the full (non-3D) modal hidden until first person is rendering */
 body.mb-fpm .g-ov:not(.fp3d) #g-modal{visibility:hidden}
+
+/* no turbo, no photo mode on mobile */
+body.mobile #g-tT,body.mobile #xa-turbo,body.mobile #xa-pb{display:none!important}
+/* journal / badges: compact row at the top, next to the title chip (was covering the sound / language / map buttons) */
+body.mobile #xa-bar{left:calc(190px + var(--sl))!important;top:calc(6px + var(--st))!important;max-width:none!important;flex-wrap:nowrap;gap:5px}
+body.mobile #xa-bar .g-btn{font-size:13px!important;min-height:36px;padding:3px 8px}
